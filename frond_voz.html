@@ -1,0 +1,185 @@
+<!-- <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Microservicio Voz a Texto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prueba del Microservicio de Voz a Texto</h1>
+        <p>Haz clic en "Grabar" para capturar tu voz, luego la transcripción aparecerá debajo.</p>
+
+        <button id="recordButton">Grabar</button>
+        <button id="stopButton" disabled>Detener</button>
+
+        <div class="output" id="output"></div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        const recordButton = document.getElementById('recordButton');
+        const stopButton = document.getElementById('stopButton');
+        const outputDiv = document.getElementById('output');
+
+        recordButton.addEventListener('click', async () => {
+            // Pedir permiso para acceder al micrófono
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/wav' }); // Asegurarse de usar 'audio/wav'
+
+            // Iniciar la grabación
+            mediaRecorder.start();
+            recordButton.disabled = true;
+            stopButton.disabled = false;
+
+            audioChunks = [];
+
+            // Almacenar los datos de audio capturados
+            mediaRecorder.addEventListener('dataavailable', event => {
+                audioChunks.push(event.data);
+            });
+        });
+
+        stopButton.addEventListener('click', () => {
+            // Detener la grabación
+            mediaRecorder.stop();
+            recordButton.disabled = false;
+            stopButton.disabled = true;
+
+            // Cuando se detenga la grabación, enviar el audio al servidor
+            mediaRecorder.addEventListener('stop', () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const reader = new FileReader();
+
+                reader.onloadend = () => {
+                    const audioBase64 = reader.result.split(',')[1]; // Extraer solo la parte base64
+
+                    // Enviar el audio en base64 al servidor Flask
+                    fetch('http://127.0.0.1:5000/speech_to_text', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ audio_base64: audioBase64 })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            outputDiv.innerText = 'Error: ' + data.error;
+                        } else {
+                            outputDiv.innerText = 'Transcripción: ' + data.text;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        outputDiv.innerText = 'Ocurrió un error al procesar el audio.';
+                    });
+                };
+
+                reader.readAsDataURL(audioBlob); // Convertir el audio a base64
+            });
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text</title>
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+</head>
+<body>
+    <h1>Prueba de Conversión de Voz a Texto</h1>
+
+    <button id="start-record-btn">Comenzar Grabación</button>
+    <button id="stop-record-btn" disabled>Detener Grabación</button>
+
+    <h2>Texto Transcrito:</h2>
+    <p id="transcription">Aquí aparecerá el texto...</p>
+
+    <script>
+        let recorder;  // Variable para el objeto Recorder.js
+        let audioContext;
+
+        // Iniciar grabación
+        document.getElementById("start-record-btn").addEventListener("click", function() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const input = audioContext.createMediaStreamSource(stream);
+                    recorder = new Recorder(input, { numChannels: 1 });
+
+                    recorder.record();
+                    document.getElementById("stop-record-btn").disabled = false;
+                    document.getElementById("start-record-btn").disabled = true;
+                })
+                .catch(function(err) {
+                    console.error("Error al acceder al micrófono: ", err);
+                });
+        });
+
+        // Detener grabación y enviar archivo al servidor
+        document.getElementById("stop-record-btn").addEventListener("click", function() {
+            recorder.stop();
+            document.getElementById("stop-record-btn").disabled = true;
+            document.getElementById("start-record-btn").disabled = false;
+
+            // Exportar audio como WAV y enviarlo al servidor
+            recorder.exportWAV(function(blob) {
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = function() {
+                    const audioBase64 = reader.result.split(',')[1];  // Base64 sin el prefijo
+                    console.log(audioBase64);  // Verifica el contenido
+
+                    // Enviar archivo base64 al servidor
+                    fetch('http://localhost:5000/speech_to_text', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ audio_base64: audioBase64 })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.text) {
+                            document.getElementById("transcription").innerText = data.text;
+                        } else {
+                            document.getElementById("transcription").innerText = "Error: " + data.error;
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById("transcription").innerText = "Error al enviar el audio.";
+                        console.error("Error:", error);
+                    });
+                };
+            });
+        });
+    </script>
+</body>
+</html>
+
