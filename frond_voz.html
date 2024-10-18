@@ -157,7 +157,7 @@
                     console.log(audioBase64);  // Verifica el contenido
 
                     // Enviar archivo base64 al servidor
-                    fetch('http://localhost:5000/speech_to_text', {
+                    fetch('http://localhost:5001/speech_to_text', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
