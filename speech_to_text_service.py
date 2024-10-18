@@ -18,7 +18,9 @@ def speech_to_text():
 
         # Decodifica el archivo de audio base64
         audio_data = base64.b64decode(audio_base64)
-        audio_path = "/tmp/temp_audio.wav"
+        audio_path = "/var/www/translator/traductor-de-voz-a-texto/tmp_audio/temp_audio.wav"
+
+        # audio_path = "/tmp/temp_audio.wav"
         with open(audio_path, "wb") as audio_file:
             audio_file.write(audio_data)
 
