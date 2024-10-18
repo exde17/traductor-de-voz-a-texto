@@ -4,6 +4,7 @@ import base64
 import os
 from flask_cors import CORS
 from pydub import AudioSegment
+AudioSegment.converter = "/usr/bin/flac"
 import io
 
 app = Flask(__name__)
