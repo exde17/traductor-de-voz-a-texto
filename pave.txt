@@ -1,0 +1,60 @@
+server {
+    server_name ai.tickapp.online;
+    client_max_body_size 120M;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /static/ {
+        alias /var/www/servicioAi/static/;
+    }
+
+    location /media/ {
+        alias /var/www/servicioAi/media/;
+    }
+
+    # Ajuste para servir el archivo HTML correctamente en /front
+    location /front {
+        alias /var/www/servicioAi/from-respuesta.html;
+        default_type text/html;
+        add_header Content-Type text/html;
+    }
+    location /front-prueba {
+        alias /var/www/servicioAi/fron-prueba.html;
+        default_type text/html;
+        add_header Content-Type text/html;
+    }
+
+    location /fetchvideo.js {
+        alias /var/www/servicioAi/fetchvideo.js;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/ai.tickapp.online/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/ai.tickapp.online/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+server {
+    if ($host = ai.tickapp.online) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    server_name ai.tickapp.online;
+    return 404; # managed by Certbot
+
+
+}
+(venv) [opc@exde17 conf.d]$
